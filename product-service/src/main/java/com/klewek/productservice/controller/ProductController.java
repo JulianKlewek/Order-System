@@ -1,8 +1,10 @@
 package com.klewek.productservice.controller;
 
-import com.klewek.productservice.record.ProductRequestRecord;
-import com.klewek.productservice.record.ProductResponseRecord;
+import com.klewek.productservice.dto.ProductRequestDto;
+import com.klewek.productservice.dto.ProductResponseDto;
+import com.klewek.productservice.dto.ProductStatus;
 import com.klewek.productservice.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,17 +20,21 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<String> createProduct(@RequestBody ProductRequestRecord productRequest){
-        productService.createProduct(productRequest);
+    public ResponseEntity<ProductResponseDto> createProduct(@RequestBody @Valid ProductRequestDto productRequest){
+        ProductResponseDto createProductDto = productService.createProduct(productRequest);
+
+        HttpStatus httpStatus = createProductDto.status() == ProductStatus.ALREADY_EXISTS
+                ? HttpStatus.CONFLICT
+                : HttpStatus.CREATED;
 
         return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body("Product added.");
+                .status(httpStatus)
+                .body(createProductDto);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseRecord>> getAllProducts(){
-        List<ProductResponseRecord> allProducts = productService.getAllProducts();
+    public ResponseEntity<List<ProductResponseDto>> getAllProducts(){
+        List<ProductResponseDto> allProducts = productService.getAllProducts();
 
         return ResponseEntity
                 .status(HttpStatus.OK)

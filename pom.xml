@@ -28,6 +28,10 @@
     <modules>
         <module>discovery-server</module>
         <module>product-service</module>
+        <module>order-service</module>
+        <module>inventory-service</module>
+        <module>api-gateway</module>
+        <module>notification-service</module>
     </modules>
 
     <dependencyManagement>
@@ -52,13 +56,23 @@
     </dependencyManagement>
 
     <build>
-        <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (maybe moved to parent pom) -->
+        <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring.boot.maven.plugin}</version>
+                    <configuration>
+                        <layers>
+                            <enabled>true</enabled>
+                        </layers>
+                    </configuration>
                 </plugin>
+<!--                <plugin>-->
+<!--                    <groupId>org.apache.maven.plugins</groupId>-->
+<!--                    <artifactId>maven-surefire-plugin</artifactId>-->
+<!--                    <version>${3.0.0}</version>-->
+<!--                </plugin>-->
             </plugins>
         </pluginManagement>
     </build>
