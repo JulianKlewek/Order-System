@@ -1,4 +1,4 @@
-package exception;
+package com.klewek.productservice.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

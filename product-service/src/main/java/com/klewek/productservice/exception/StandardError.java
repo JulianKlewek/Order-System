@@ -1,4 +1,4 @@
-package exception;
+package com.klewek.productservice.exception;
 
 import lombok.Builder;
 

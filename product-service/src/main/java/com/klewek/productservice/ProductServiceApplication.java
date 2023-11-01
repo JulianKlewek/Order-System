@@ -1,6 +1,6 @@
 package com.klewek.productservice;
 
-import exception.RestExceptionHandler;
+import com.klewek.productservice.exception.RestExceptionHandler;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;

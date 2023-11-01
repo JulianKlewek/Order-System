@@ -192,8 +192,8 @@ class ProductServiceIntegrationTests extends IntegrationConfiguration {
     }
 
     @Test
-    @DisplayName("Should return two products")
-    void should_return_two_products() throws Exception {
+    @DisplayName("Should return list with size two")
+    void should_save_two_products_and_return_list_with_size_two() throws Exception {
         //given
         productRepository.save(Product.builder()
                 .name("iPhone14")
