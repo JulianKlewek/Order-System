@@ -1,4 +1,9 @@
 package com.klewek.orderservice.dto;
 
-public record OrderResponseDto() {
+import lombok.Builder;
+
+import java.util.List;
+
+@Builder
+public record OrderResponseDto(String orderNumber, List<OrderLineItemDto> orderLineItemsList) {
 }

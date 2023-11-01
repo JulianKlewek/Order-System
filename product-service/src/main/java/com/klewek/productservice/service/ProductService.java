@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.klewek.productservice.mapper.ProductMapper.productToResponseDto;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -36,7 +38,7 @@ public class ProductService {
 
         log.info("Product {} is saved", saved.getId());
 
-        return ProductMapper.productToResponseDto(saved, ProductStatus.CREATED);
+        return productToResponseDto(saved, ProductStatus.CREATED);
     }
 
     private boolean checkIfProductExists(ProductRequestDto productRequest) {

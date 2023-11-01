@@ -1,6 +1,9 @@
 package com.klewek.orderservice.dto;
 
+import lombok.Builder;
+
 import java.math.BigDecimal;
 
-public record OrderLineItemDto(Long id, String skuCode, BigDecimal price, Integer quantity) {
+@Builder
+public record OrderLineItemDto(String skuCode, BigDecimal price, Integer quantity) {
 }

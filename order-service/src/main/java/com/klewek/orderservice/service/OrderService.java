@@ -1,11 +1,12 @@
 package com.klewek.orderservice.service;
 
+import com.klewek.orderservice.dto.OrderRequestDto;
+import com.klewek.orderservice.dto.OrderResponseDto;
+import com.klewek.orderservice.dto.OrderedProductDto;
 import com.klewek.orderservice.event.OrderPlacedEvent;
 import com.klewek.orderservice.mapper.OrderLineItemMapper;
 import com.klewek.orderservice.model.Order;
 import com.klewek.orderservice.model.OrderLineItem;
-import com.klewek.orderservice.dto.OrderedProductDto;
-import com.klewek.orderservice.dto.OrderRequestDto;
 import com.klewek.orderservice.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
+import static com.klewek.orderservice.mapper.OrderMapper.toDto;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -35,10 +39,11 @@ public class OrderService {
 
 
     @CircuitBreaker(name = SERVICE_NAME, fallbackMethod = FALLBACK_METHOD)
-    public boolean placeOrder(OrderRequestDto orderRequest) {
+    public OrderResponseDto placeOrder(OrderRequestDto orderRequest) {
         List<OrderLineItem> orderedItems = orderRequest.orderLineItemDtoList()
                 .stream()
                 .map(OrderLineItemMapper::toEntity)
+                .sorted(comparing(OrderLineItem::getSkuCode))
                 .toList();
         List<OrderedProductDto> missingProducts = findNotAvailableProducts(orderedItems);
         if (!missingProducts.isEmpty()) {
@@ -50,7 +55,7 @@ public class OrderService {
                 .build();
         orderRepository.save(order);
         kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
-        return true;
+        return toDto(order);
     }
 
     private List<OrderedProductDto> findNotAvailableProducts(List<OrderLineItem> orderedItems) {
@@ -79,7 +84,6 @@ public class OrderService {
     private List<OrderedProductDto> createMissingProductsList(List<OrderLineItem> orderedItems,
                                                               List<OrderedProductDto> availableItems) {
         availableItems.sort(comparing(OrderedProductDto::skuCode));
-        orderedItems.sort(comparing(OrderLineItem::getSkuCode));
         List<OrderedProductDto> missingProductsList = new ArrayList<>();
         for (int i = 0; i < orderedItems.size(); i++) {
             if (orderedItems.get(i).getQuantity() > availableItems.get(i).quantity()) {

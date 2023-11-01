@@ -1,6 +1,7 @@
 package com.klewek.orderservice.controller;
 
 import com.klewek.orderservice.dto.OrderRequestDto;
+import com.klewek.orderservice.dto.OrderResponseDto;
 import com.klewek.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,17 +19,12 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<String> placeOrder(@RequestBody OrderRequestDto orderRequestDto){
-        boolean isOrderPlaced = orderService.placeOrder(orderRequestDto);
+    public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody OrderRequestDto orderRequestDto){
+        OrderResponseDto orderResponseDto = orderService.placeOrder(orderRequestDto);
 
-        if(isOrderPlaced){
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body("Order placed");
-        }
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Order not placed");
+                    .body(orderResponseDto);
     }
 
 }
