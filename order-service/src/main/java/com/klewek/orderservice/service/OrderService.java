@@ -3,8 +3,9 @@ package com.klewek.orderservice.service;
 import com.klewek.orderservice.dto.OrderRequestDto;
 import com.klewek.orderservice.dto.OrderResponseDto;
 import com.klewek.orderservice.dto.OrderStatus;
-import com.klewek.orderservice.dto.OrderedProductDto;
+import com.klewek.orderservice.dto.InventoryResponseDto;
 import com.klewek.orderservice.event.OrderPlacedEvent;
+import com.klewek.orderservice.exception.NoAvailableProductsException;
 import com.klewek.orderservice.mapper.OrderLineItemMapper;
 import com.klewek.orderservice.model.Order;
 import com.klewek.orderservice.model.OrderLineItem;
@@ -23,8 +24,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.klewek.orderservice.mapper.OrderMapper.toDto;
+import static com.klewek.orderservice.mapper.OrderedProductInventoryMapper.*;
 import static java.util.Comparator.comparing;
-import static java.util.Objects.requireNonNullElseGet;
 
 @Service
 @RequiredArgsConstructor
@@ -36,19 +37,18 @@ public class OrderService {
     private final WebClient.Builder webClientBuilder;
     private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
     private static final String SERVICE_NAME = "order-service";
-    private static final String FALLBACK_METHOD = "orderNotPlacedInformation";
+    private static final String FALLBACK_METHOD = "generateMissingProductsDtoList";
 
-
-    @CircuitBreaker(name = SERVICE_NAME, fallbackMethod = FALLBACK_METHOD)
     public OrderResponseDto placeOrder(OrderRequestDto orderRequest) {
         List<OrderLineItem> orderedItems = orderRequest.orderLineItemDtoList()
                 .stream()
                 .map(OrderLineItemMapper::toEntity)
                 .sorted(comparing(OrderLineItem::getSkuCode))
                 .toList();
-        List<OrderedProductDto> missingProducts = findNotAvailableProducts(orderedItems);
+        List<InventoryResponseDto> missingProducts = findNotAvailableProducts(orderedItems);
         if (!missingProducts.isEmpty()) {
-            throw new IllegalArgumentException("Not enough product quantity.");
+            throw new NoAvailableProductsException(
+                    "Inventory does not contain sufficient quantity of products.", missingProducts);
         }
         Order order = Order.builder()
                 .orderNumber(UUID.randomUUID().toString())
@@ -59,32 +59,36 @@ public class OrderService {
         return toDto(order, OrderStatus.CREATED);
     }
 
-    private List<OrderedProductDto> findNotAvailableProducts(List<OrderLineItem> orderedItems) {
+    @CircuitBreaker(name = SERVICE_NAME, fallbackMethod = FALLBACK_METHOD)
+    private List<InventoryResponseDto> findNotAvailableProducts(List<OrderLineItem> orderedItems) {
         List<String> skuCodes = orderedItems
                 .stream()
                 .map(OrderLineItem::getSkuCode)
                 .toList();
-        List<OrderedProductDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryService(skuCodes);
+        List<InventoryResponseDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryService(skuCodes);
         return createMissingProductsList(orderedItems, orderedProductsInventoryList);
     }
 
-    private List<OrderedProductDto> getAvailableProductsQuantityFromInventoryService(List<String> skuCodes) {
-        List<OrderedProductDto> orderedProductDtoList = webClientBuilder.build()
+    private List<InventoryResponseDto> getAvailableProductsQuantityFromInventoryService(List<String> skuCodes) {
+        List<InventoryResponseDto> responseDtoList = webClientBuilder.build()
                 .get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes)
                                 .build())
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<OrderedProductDto>>() {
+                .bodyToMono(new ParameterizedTypeReference<List<InventoryResponseDto>>() {
                 })
                 .block();
-        return requireNonNullElseGet(orderedProductDtoList, ArrayList::new);
+        if (responseDtoList == null || responseDtoList.isEmpty()){
+            throw new NoAvailableProductsException("Could not find products for given skuCodes: " + skuCodes.toString());
+        }
+        return responseDtoList;
     }
 
-    private List<OrderedProductDto> createMissingProductsList(List<OrderLineItem> orderedItems,
-                                                              List<OrderedProductDto> availableItems) {
-        availableItems.sort(comparing(OrderedProductDto::skuCode));
-        List<OrderedProductDto> missingProductsList = new ArrayList<>();
+    private List<InventoryResponseDto> createMissingProductsList(List<OrderLineItem> orderedItems,
+                                                                 List<InventoryResponseDto> availableItems) {
+        availableItems.sort(comparing(InventoryResponseDto::skuCode));
+        List<InventoryResponseDto> missingProductsList = new ArrayList<>();
         for (int i = 0; i < orderedItems.size(); i++) {
             if (orderedItems.get(i).getQuantity() > availableItems.get(i).quantity()) {
                 missingProductsList.add(availableItems.get(i));
@@ -94,16 +98,14 @@ public class OrderService {
     }
 
     /**
-     * @param orderRequest
+     * @param orderedItems
      * @param exc
      * @return false
      * <p>
      * FALLBACK_METHOD
      */
-    public OrderResponseDto orderNotPlacedInformation(OrderRequestDto orderRequest, RuntimeException exc) {
-        return OrderResponseDto.builder()
-                .status(OrderStatus.FAILURE)
-                .orderLineItemsList(orderRequest.orderLineItemDtoList())
-                .build();
+    public List<InventoryResponseDto> generateMissingProductsDtoList(List<OrderLineItem> orderedItems, Exception exc) {
+        log.error(exc.getMessage());
+        return listToDtoList(orderedItems);
     }
 }

@@ -2,6 +2,7 @@ package com.klewek.orderservice.controller;
 
 import com.klewek.orderservice.dto.OrderRequestDto;
 import com.klewek.orderservice.dto.OrderResponseDto;
+import com.klewek.orderservice.dto.OrderStatus;
 import com.klewek.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,9 +22,12 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody OrderRequestDto orderRequestDto){
         OrderResponseDto orderResponseDto = orderService.placeOrder(orderRequestDto);
+        HttpStatus httpStatus = orderResponseDto.status() == OrderStatus.FAILURE
+                ? HttpStatus.SERVICE_UNAVAILABLE
+                : HttpStatus.CREATED;
 
             return ResponseEntity
-                    .status(HttpStatus.CREATED)
+                    .status(httpStatus)
                     .body(orderResponseDto);
     }
 
