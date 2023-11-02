@@ -2,6 +2,7 @@ package com.klewek.orderservice.service;
 
 import com.klewek.orderservice.dto.OrderRequestDto;
 import com.klewek.orderservice.dto.OrderResponseDto;
+import com.klewek.orderservice.dto.OrderStatus;
 import com.klewek.orderservice.dto.OrderedProductDto;
 import com.klewek.orderservice.event.OrderPlacedEvent;
 import com.klewek.orderservice.mapper.OrderLineItemMapper;
@@ -55,7 +56,7 @@ public class OrderService {
                 .build();
         orderRepository.save(order);
         kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
-        return toDto(order);
+        return toDto(order, OrderStatus.CREATED);
     }
 
     private List<OrderedProductDto> findNotAvailableProducts(List<OrderLineItem> orderedItems) {
@@ -68,8 +69,7 @@ public class OrderService {
     }
 
     private List<OrderedProductDto> getAvailableProductsQuantityFromInventoryService(List<String> skuCodes) {
-        List<OrderedProductDto> orderedProductDtoList;
-        orderedProductDtoList = webClientBuilder.build()
+        List<OrderedProductDto> orderedProductDtoList = webClientBuilder.build()
                 .get()
                 .uri("http://inventory-service/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes)
@@ -100,7 +100,10 @@ public class OrderService {
      * <p>
      * FALLBACK_METHOD
      */
-    public boolean orderNotPlacedInformation(OrderRequestDto orderRequest, Exception exc) {
-        return false;
+    public OrderResponseDto orderNotPlacedInformation(OrderRequestDto orderRequest, RuntimeException exc) {
+        return OrderResponseDto.builder()
+                .status(OrderStatus.FAILURE)
+                .orderLineItemsList(orderRequest.orderLineItemDtoList())
+                .build();
     }
 }

@@ -5,5 +5,5 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record OrderResponseDto(String orderNumber, List<OrderLineItemDto> orderLineItemsList) {
+public record OrderResponseDto(OrderStatus status, String orderNumber, List<OrderLineItemDto> orderLineItemsList) {
 }
