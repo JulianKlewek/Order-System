@@ -19,7 +19,7 @@ import java.time.Clock;
 @AutoConfigureMockMvc
 @SpringBootTest
 @Slf4j
-class IntegrationConfiguration implements IntegrationTestConstants {
+class ProductTestsConfiguration implements ProductTestConstants {
 
     @Autowired
     protected MockMvc mockMvc;

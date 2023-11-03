@@ -20,8 +20,7 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<InventoryResponseDto> getProductsQuantities(List<String> skuCodes){
-        List<Inventory> inventories = inventoryRepository.findBySkuCodes(skuCodes)
-                .orElseThrow(() -> new NotFoundException("Could not find products for given sku codes"));
+        List<Inventory> inventories = inventoryRepository.findBySkuCodeIn(skuCodes);
         return listToDtoList(inventories);
     }
     public Integer updateProductQuantity(String skuCode, Integer quantity) {

@@ -5,7 +5,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import java.math.BigDecimal;
 import java.util.stream.Stream;
 
-public interface IntegrationTestConstants {
+public interface ProductTestConstants {
 
     String PRODUCT_SERVICE_PATH = "/api/product";
     String FIXED_CLOCK_TIME = "2023-04-04T04:04:04.040Z";

@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class ProductServiceIntegrationTests extends IntegrationConfiguration {
+class ProductServiceTests extends ProductTestsConfiguration {
 
     @Test
     @DisplayName("Should create product and receive product with status CREATED")
