@@ -1,6 +1,6 @@
 package com.klewek.inventoryservice.controller;
 
-import com.klewek.inventoryservice.record.ProductQuantityRecord;
+import com.klewek.inventoryservice.record.InventoryResponseDto;
 import com.klewek.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +17,8 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    public ResponseEntity<List<ProductQuantityRecord>> isInStock(@RequestParam List<String> skuCodes){
-        List<ProductQuantityRecord> inventoryResponseRecords = inventoryService.getProductsQuantities(skuCodes);
+    public ResponseEntity<List<InventoryResponseDto>> isInStock(@RequestParam List<String> skuCodes){
+        List<InventoryResponseDto> inventoryResponseRecords = inventoryService.getProductsQuantities(skuCodes);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
