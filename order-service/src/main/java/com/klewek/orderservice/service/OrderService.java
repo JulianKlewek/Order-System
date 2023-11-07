@@ -1,9 +1,9 @@
 package com.klewek.orderservice.service;
 
+import com.klewek.orderservice.dto.InventoryResponseDto;
 import com.klewek.orderservice.dto.OrderRequestDto;
 import com.klewek.orderservice.dto.OrderResponseDto;
 import com.klewek.orderservice.dto.OrderStatus;
-import com.klewek.orderservice.dto.InventoryResponseDto;
 import com.klewek.orderservice.event.OrderPlacedEvent;
 import com.klewek.orderservice.exception.NoAvailableProductsException;
 import com.klewek.orderservice.mapper.OrderLineItemMapper;
@@ -13,6 +13,7 @@ import com.klewek.orderservice.repository.OrderRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.klewek.orderservice.mapper.OrderMapper.toDto;
-import static com.klewek.orderservice.mapper.OrderedProductInventoryMapper.*;
+import static com.klewek.orderservice.mapper.OrderedProductInventoryMapper.listToDtoList;
 import static java.util.Comparator.comparing;
 
 @Service
@@ -32,6 +33,9 @@ import static java.util.Comparator.comparing;
 @Transactional
 @Slf4j
 public class OrderService {
+
+    @Value("${inventory.service.url}")
+    private String inventoryServiceUrl;
 
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
@@ -66,17 +70,45 @@ public class OrderService {
                 .map(OrderLineItem::getSkuCode)
                 .toList();
         List<InventoryResponseDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryService(skuCodes);
+//        List<InventoryResponseDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryServiceTest(skuCodes);
         return createMissingProductsList(orderedItems, orderedProductsInventoryList);
     }
 
     private List<InventoryResponseDto> getAvailableProductsQuantityFromInventoryService(List<String> skuCodes) {
-        List<InventoryResponseDto> responseDtoList = webClientBuilder.build()
+        List<InventoryResponseDto> responseDtoList = webClientBuilder
+                .baseUrl(inventoryServiceUrl).build()
                 .get()
-                .uri("http://inventory-service/api/inventory",
+                .uri("/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes)
                                 .build())
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<InventoryResponseDto>>() {
+                })
+                .block();
+        if (responseDtoList == null || responseDtoList.isEmpty()){
+            throw new NoAvailableProductsException("Could not find products for given skuCodes: " + skuCodes.toString());
+        }
+        return responseDtoList;
+    }
+
+    private List<InventoryResponseDto> getAvailableProductsQuantityFromInventoryServiceTest(List<String> skuCodes) {
+        List<InventoryResponseDto> responseDtoList = null;
+        String errorMsg  = webClientBuilder
+                .baseUrl(inventoryServiceUrl).build()
+                .get()
+                .uri("/api/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes)
+                                .build())
+                .exchange()
+                .flatMap(clientResponse -> {
+                    if (clientResponse.statusCode().is5xxServerError()) {
+                        clientResponse.body((clientHttpResponse, context) -> {
+                            return clientHttpResponse.getBody();
+                        });
+                        return clientResponse.bodyToMono(String.class);
+                    }
+                    else
+                        return clientResponse.bodyToMono(String.class);
                 })
                 .block();
         if (responseDtoList == null || responseDtoList.isEmpty()){

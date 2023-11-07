@@ -23,6 +23,7 @@
         <spring-cloud.version>2022.0.3</spring-cloud.version>
         <spring.boot.maven.plugin>3.0.4</spring.boot.maven.plugin>
         <testcontainers.version>1.19.0</testcontainers.version>
+        <wiremock.version>3.3.1</wiremock.version>
     </properties>
 
     <modules>
