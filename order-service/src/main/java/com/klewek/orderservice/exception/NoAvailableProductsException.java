@@ -7,18 +7,18 @@ import java.util.List;
 
 public class NoAvailableProductsException extends RuntimeException{
     static final long serialVersionUID = -2227969267685043310L;
-    final transient List<InventoryResponseDto> availableProducts;
+    final transient List<InventoryResponseDto> missingProducts;
     public NoAvailableProductsException(){
         super();
-        availableProducts = new ArrayList<>();
+        missingProducts = new ArrayList<>();
     }
 
     public NoAvailableProductsException(String s){
         super(s);
-        availableProducts = new ArrayList<>();
+        missingProducts = new ArrayList<>();
     }
     public NoAvailableProductsException(String message, List<InventoryResponseDto> availableProducts){
         super(message);
-        this.availableProducts = availableProducts;
+        this.missingProducts = availableProducts;
     }
 }

@@ -23,7 +23,7 @@ public class RestExceptionHandler {
     public ResponseEntity<StandardError> handleNoAvailableProductsException(
             NoAvailableProductsException exc, WebRequest request) {
         log.error(exc.getMessage());
-        List<String> missingProducts = exc.availableProducts.stream()
+        List<String> missingProducts = exc.missingProducts.stream()
                 .map(InventoryResponseDto::skuCode)
                 .toList();
         StandardError error = StandardError.builder()

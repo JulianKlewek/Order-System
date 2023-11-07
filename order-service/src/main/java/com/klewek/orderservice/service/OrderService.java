@@ -70,7 +70,6 @@ public class OrderService {
                 .map(OrderLineItem::getSkuCode)
                 .toList();
         List<InventoryResponseDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryService(skuCodes);
-//        List<InventoryResponseDto> orderedProductsInventoryList = getAvailableProductsQuantityFromInventoryServiceTest(skuCodes);
         return createMissingProductsList(orderedItems, orderedProductsInventoryList);
     }
 
@@ -83,32 +82,6 @@ public class OrderService {
                                 .build())
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<List<InventoryResponseDto>>() {
-                })
-                .block();
-        if (responseDtoList == null || responseDtoList.isEmpty()){
-            throw new NoAvailableProductsException("Could not find products for given skuCodes: " + skuCodes.toString());
-        }
-        return responseDtoList;
-    }
-
-    private List<InventoryResponseDto> getAvailableProductsQuantityFromInventoryServiceTest(List<String> skuCodes) {
-        List<InventoryResponseDto> responseDtoList = null;
-        String errorMsg  = webClientBuilder
-                .baseUrl(inventoryServiceUrl).build()
-                .get()
-                .uri("/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes)
-                                .build())
-                .exchange()
-                .flatMap(clientResponse -> {
-                    if (clientResponse.statusCode().is5xxServerError()) {
-                        clientResponse.body((clientHttpResponse, context) -> {
-                            return clientHttpResponse.getBody();
-                        });
-                        return clientResponse.bodyToMono(String.class);
-                    }
-                    else
-                        return clientResponse.bodyToMono(String.class);
                 })
                 .block();
         if (responseDtoList == null || responseDtoList.isEmpty()){
