@@ -109,6 +109,7 @@ services:
 
   #Eureka Server
   discovery-server:
+    build: discovery-server
     image: julekkl/discovery-server:latest
     container_name: discovery-server
     pull_policy: always
@@ -119,6 +120,7 @@ services:
 
   #Api-Gateway
   api-gateway:
+    build: api-gateway
     image: julekkl/apigateway:latest
     container_name: api-gateway
     pull_policy: always
@@ -135,6 +137,7 @@ services:
 
   #Product-Service
   product-service:
+    build: product-service
     container_name: product-service
     image: julekkl/product-service:latest
     pull_policy: always
@@ -147,6 +150,7 @@ services:
 
   #Order-Service
   order-service:
+    build: order-service
     container_name: order-service
     image: julekkl/order-service:latest
     pull_policy: always
@@ -161,6 +165,7 @@ services:
 
   #Inventory-Service
   inventory-service:
+    build: inventory-service
     container_name: inventory-service
     image: julekkl/inventory-service:latest
     pull_policy: always
@@ -174,6 +179,7 @@ services:
 
   #Notification-Service
   notification-service:
+    build: notification-service
     container_name: notification-service
     image: julekkl/notification-service:latest
     pull_policy: always
