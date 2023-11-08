@@ -14,9 +14,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Clock;
 
@@ -41,15 +43,17 @@ public class OrderTestsConfiguration {
     protected OrderService orderService;
     @MockBean
     protected Clock clock;
-
     @Container
     static final MySQLContainer mySQLContainer = new MySQLContainer("mysql:8.0.32");
+    @Container
+    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1"));
 
     @DynamicPropertySource
     private static void setProperties(DynamicPropertyRegistry properties) {
         properties.add("spring.data.mysql.url", mySQLContainer::getJdbcUrl);
         properties.add("inventory.service.url", () -> WIREMOCK_SERVER_HOST + ":" + wireMockServer.getPort());
         properties.add("spring.cloud.loadbalancer.enabled", () -> false);
+        properties.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
     }
 
     static {
